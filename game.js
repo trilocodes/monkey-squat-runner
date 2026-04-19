@@ -19,8 +19,8 @@ let isSquatting = false; // Current squat state for collision detection
 let lives = 3; // Player lives
 let squatFrameCount = 0; // Counter for consecutive squat frames
 let standFrameCount = 0; // Counter for consecutive standing frames
-const SQUAT_FRAME_THRESHOLD = 3; // Need 3 consecutive frames to confirm squat
-const STAND_FRAME_THRESHOLD = 3; // Need 3 consecutive frames to confirm standing
+const SQUAT_FRAME_THRESHOLD = 1; // Instant squat detection!
+const STAND_FRAME_THRESHOLD = 1; // Instant stand detection!
 
 // Obstacle state
 let obstacles = [];
@@ -104,34 +104,23 @@ function detectSquat(landmarks) {
     const leftAnkle = landmarks[27];
     const rightAnkle = landmarks[28];
     
-    // Check visibility - strict requirements
-    if (leftHip.visibility < 0.7 || rightHip.visibility < 0.7 || 
-        leftKnee.visibility < 0.7 || rightKnee.visibility < 0.7 ||
-        leftAnkle.visibility < 0.6 || rightAnkle.visibility < 0.6 ||
-        leftShoulder.visibility < 0.6 || rightShoulder.visibility < 0.6) {
+    // MUCH MORE LENIENT visibility check
+    if (leftHip.visibility < 0.3 || rightHip.visibility < 0.3 || 
+        leftKnee.visibility < 0.3 || rightKnee.visibility < 0.3) {
         return false;
     }
     
     const hipY = (leftHip.y + rightHip.y) / 2;
     const kneeY = (leftKnee.y + rightKnee.y) / 2;
-    const ankleY = (leftAnkle.y + rightAnkle.y) / 2;
     const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
     
     const hipKneeDistance = Math.abs(hipY - kneeY);
-    const kneeAnkleDistance = Math.abs(kneeY - ankleY);
     const shoulderHipDistance = Math.abs(shoulderY - hipY);
     
-    // Multiple conditions for robust squat detection:
-    // 1. Hip-knee distance must be small (squat depth)
-    // 2. Knee-ankle distance must be reasonable (legs not fully bent)
-    // 3. Shoulder-hip distance should be reasonable (torso not too bent forward)
-    // 4. Hip should be close to or below knee level
-    const condition1 = hipKneeDistance < 0.12; // Tighter threshold
-    const condition2 = kneeAnkleDistance > 0.08 && kneeAnkleDistance < 0.4; // Reasonable leg bend
-    const condition3 = shoulderHipDistance > 0.15; // Torso upright enough
-    const condition4 = hipY >= kneeY - 0.05; // Hip at or below knee
+    // SIMPLE squat detection: hip close to knee
+    const isSquatting = hipKneeDistance < 0.25; // Very lenient!
     
-    return condition1 && condition2 && condition3 && condition4;
+    return isSquatting;
 }
 
 // ==================== SKELETON DRAWING ====================
