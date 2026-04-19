@@ -533,6 +533,18 @@ function onPoseResults(results) {
         } else if (gameState === 'RUNNING') {
             const squatDetected = detectSquat(landmarks);
             
+            // DEBUG: Show squat detection status on screen
+            const bigMsg = document.getElementById('big-message');
+            if (squatDetected) {
+                bigMsg.textContent = '🔵 SQUAT DETECTED';
+                bigMsg.style.color = '#00ff88';
+            } else {
+                bigMsg.textContent = '⚪ STANDING';
+                bigMsg.style.color = '#ffffff';
+            }
+            bigMsg.style.fontSize = '24px';
+            bigMsg.style.display = 'block';
+            
             // Frame smoothing: require consecutive frames to confirm state change
             if (squatDetected) {
                 squatFrameCount++;
