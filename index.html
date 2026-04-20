@@ -2,159 +2,187 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>Monkey Squat Runner - Fitness Game</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍌</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Squat Runner</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div id="game-container">
-        <!-- Jungle Background Layer -->
-        <div class="jungle-background">
-            <div class="jungle-trees">
-                🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲
-            </div>
-            <div class="jungle-bushes">
-                🌿🍀🌿🌾🌿🍀🌿🌾🌿🍀🌿🌾🌿🍀🌿🌾
-            </div>
-        </div>
-        
-        <video id="video" autoplay playsinline></video>
-        <canvas id="pose-canvas"></canvas>
-        <canvas id="obstacle-canvas"></canvas>
-        
-        <div class="ui-overlay">
-            <div class="stats-container">
-                <div class="lives-container">
-                    <span class="heart" id="heart1">❤️</span>
-                    <span class="heart" id="heart2">❤️</span>
-                    <span class="heart" id="heart3">❤️</span>
-                </div>
-                
-                <div class="squat-counter">
-                    <div class="counter-label">Score</div>
-                    <div class="counter-value" id="squat-count">0</div>
-                    <div class="sub-counters">
-                        <div class="sub-counter">
-                            <span>⬇️</span>
-                            <span class="sub-counter-value" id="obstacle-count">0</span>
-                        </div>
-                        <div class="sub-counter">
-                            <span>🍌</span>
-                            <span class="sub-counter-value" id="banana-count">0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="obstacles-counter">
-                <div class="counter-label">Obstacles</div>
-                <div class="counter-value" id="obstacle-count-hidden">0</div>
-            </div>
-            
-            <div class="bananas-counter">
-                <div class="counter-label">Bananas</div>
-                <div class="counter-value" id="banana-count-hidden">0</div>
-            </div>
-            
-            <div class="message-center" id="message-center">
-                <div class="big-message" id="big-message">Fit your entire body in the frame</div>
-                <div class="sub-message" id="sub-message">Then raise your arm to start</div>
-            </div>
-        </div>
-        
-        <!-- Game Over Popup - OUTSIDE ui-overlay so clicks work -->
-        <div class="game-over-popup" id="game-over-popup">
-            <div class="game-over-container">
-                <div class="game-over-title">Game Over!</div>
-                <div class="work-killed-message">You were killed by WORK! 💼💻</div>
-                <div class="game-over-stats">
-                    <div class="final-score-display" id="final-score">0</div>
-                    <div class="final-breakdown">
-                        <div class="breakdown-item">
-                            <span>⬇️</span>
-                            <span id="final-obstacles">0</span>
-                        </div>
-                        <div class="breakdown-item">
-                            <span>🍌</span>
-                            <span id="final-bananas">0</span>
-                        </div>
-                    </div>
-                </div>
-                <button class="restart-button" id="restart-btn">PLAY AGAIN!</button>
-            </div>
-        </div>
-        
-        <!-- How to Play Modal - OUTSIDE ui-overlay so clicks work -->
-        <div class="how-to-play-modal" id="how-to-play">
-            <div class="how-to-play-container">
-                <div class="how-to-play-title">How to Play</div>
-                
-                <div class="instruction-boxes">
-                    <div class="instruction-box">
-                        <div class="instruction-icon">
-                            <div class="demo-monkey squat-demo">
-                                <div class="demo-head"></div>
-                                <div class="demo-body"></div>
-                            </div>
-                            <div class="demo-laptop"></div>
-                        </div>
-                        <div class="instruction-title">Squat to Dodge!</div>
-                        <div class="instruction-text">Flying laptops = work stress! Squat down to dodge 💼</div>
-                    </div>
-                    
-                    <div class="instruction-box">
-                        <div class="instruction-icon">
-                            <div class="demo-monkey stand-demo">
-                                <div class="demo-head"></div>
-                                <div class="demo-body"></div>
-                            </div>
-                            <div class="demo-banana">🍌</div>
-                        </div>
-                        <div class="instruction-title">Collect Bananas!</div>
-                        <div class="instruction-text">Stand up to grab bananas for bonus points</div>
-                    </div>
-                    
-                    <div class="instruction-box">
-                        <div class="instruction-icon">
-                            <div class="demo-score">
-                                <div class="demo-hearts">❤️❤️❤️</div>
-                                <div class="demo-number">25</div>
-                            </div>
-                        </div>
-                        <div class="instruction-title">Score High!</div>
-                        <div class="instruction-text">Dodge obstacles (+1) and collect bananas (+2)</div>
-                    </div>
-                </div>
-                
-                <button class="start-button" id="start-game-btn">START GAME!</button>
+        <!-- Background elements -->
+        <div class="jungle-bg">
+            <div class="vines"></div>
+            <div class="leaves-layer"></div>
+            <div class="ground-decorations">
+                <span class="grass-tuft" style="left: 5%; bottom: 68%;">🌾</span>
+                <span class="grass-tuft" style="left: 20%; bottom: 66%;">🌿</span>
+                <span class="grass-tuft" style="left: 35%; bottom: 67%;">🌾</span>
+                <span class="grass-tuft" style="left: 50%; bottom: 65%;">🌿</span>
+                <span class="grass-tuft" style="left: 65%; bottom: 67%;">🌾</span>
+                <span class="grass-tuft" style="left: 80%; bottom: 66%;">🌿</span>
+                <span class="grass-tuft" style="left: 95%; bottom: 68%;">🌾</span>
+                <span class="grass-tuft" style="left: 10%; bottom: 32%;">🌿</span>
+                <span class="grass-tuft" style="left: 30%; bottom: 33%;">🌾</span>
+                <span class="grass-tuft" style="left: 60%; bottom: 34%;">🌿</span>
+                <span class="grass-tuft" style="left: 85%; bottom: 32%;">🌾</span>
+                <span class="rock" style="left: 15%; bottom: 65%;">🪨</span>
+                <span class="rock" style="left: 70%; bottom: 67%;">🪨</span>
+                <span class="rock" style="left: 25%; bottom: 34%;">🪨</span>
+                <span class="butterfly" style="left: 40%; top: 15%;">🦋</span>
+                <span class="butterfly" style="left: 75%; top: 20%;">🦋</span>
             </div>
         </div>
 
-        <div class="player-character" id="player">
-            <div class="player-head">
-                <div class="monkey-eyes">👀</div>
-                <div class="monkey-face"></div>
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <h1 class="game-title">MONKEY<br>SQUAT<br>RUNNER</h1>
+            <p class="subtitle">DODGE WORK WITH YOUR SQUATS!</p>
+            
+            <div class="mode-selector">
+                <h3>SPEED</h3>
+                <div class="speed-buttons">
+                    <button class="speed-btn active" data-speed="slow">
+                        🐢 SLOW<br><span>1 obstacle / 4s</span>
+                    </button>
+                    <button class="speed-btn" data-speed="medium">
+                        🏃 MEDIUM<br><span>1 obstacle / 3s</span>
+                    </button>
+                    <button class="speed-btn" data-speed="fast">
+                        ⚡ FAST<br><span>1 obstacle / 2s</span>
+                    </button>
+                </div>
             </div>
-            <div class="player-body">
-                <div class="monkey-hand-left">🤚</div>
-                <div class="monkey-hand-right">🤚</div>
+
+            <button id="start-btn" class="smash-btn">START GAME</button>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen">
+            <h2>POSITION YOURSELF</h2>
+            <div class="instructions">
+                <p class="instruction-text">📸 Stand so your full body is visible in the camera</p>
+                <p class="instruction-text">🦴 Wait for the skeleton to appear</p>
             </div>
-            <div class="player-shorts" id="shorts">
-                <div class="short-left"></div>
-                <div class="short-right"></div>
+            <div id="detection-status" class="status-indicator">
+                <span>⏳ Detecting your body...</span>
             </div>
+        </div>
+
+        <!-- Ready Screen -->
+        <div id="ready-screen" class="screen">
+            <h2>READY TO PLAY!</h2>
+            <div class="instructions-box">
+                <p class="instruction-text">🍌 <strong>Stay STANDING</strong> to grab bananas</p>
+                <p class="instruction-text">💼 <strong>SQUAT DOWN</strong> to dodge WORK</p>
+                <p class="instruction-text">❤️ You have 3 lives - don't get hit by WORK!</p>
+            </div>
+            <div id="hand-status" class="status-indicator-large">
+                <span>🙋 RAISE YOUR HAND ABOVE SHOULDER TO START</span>
+            </div>
+        </div>
+
+        <!-- Countdown Screen -->
+        <div id="countdown-screen" class="screen">
+            <div id="countdown-number">3</div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <!-- Score Panel -->
+            <div class="score-panel">
+                <div class="score-item">
+                    <span class="score-icon">💼</span>
+                    <span class="score-label">WORK DODGED:</span>
+                    <span id="work-dodged" class="score-value">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="score-icon">🍌</span>
+                    <span class="score-label">BANANAS EATEN:</span>
+                    <span id="bananas-eaten" class="score-value">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="score-icon">❤️</span>
+                    <span class="score-label">LIVES:</span>
+                    <div id="lives-container" class="lives">
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                        <span class="heart">❤️</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Canvas -->
+            <div id="game-canvas">
+                <div id="monkey" class="monkey">
+                    <svg class="monkey-svg" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Head -->
+                        <circle cx="50" cy="20" r="18" fill="#8B4513" stroke="#5D3A1A" stroke-width="2"/>
+                        <!-- Face -->
+                        <circle cx="50" cy="22" r="12" fill="#D2691E"/>
+                        <!-- Eyes -->
+                        <circle cx="44" cy="20" r="3" fill="#000"/>
+                        <circle cx="56" cy="20" r="3" fill="#000"/>
+                        <!-- Smile -->
+                        <path d="M 42 26 Q 50 30 58 26" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <!-- Ears -->
+                        <circle cx="32" cy="18" r="6" fill="#8B4513" stroke="#5D3A1A" stroke-width="1.5"/>
+                        <circle cx="68" cy="18" r="6" fill="#8B4513" stroke="#5D3A1A" stroke-width="1.5"/>
+                        <!-- Body -->
+                        <ellipse cx="50" cy="65" rx="16" ry="25" fill="#8B4513" stroke="#5D3A1A" stroke-width="2"/>
+                        <ellipse cx="50" cy="68" rx="12" ry="20" fill="#D2691E"/>
+                        <!-- Arms (stickman style) -->
+                        <line x1="50" y1="50" x2="30" y2="70" stroke="#5D3A1A" stroke-width="4" stroke-linecap="round" class="arm-left"/>
+                        <line x1="50" y1="50" x2="70" y2="70" stroke="#5D3A1A" stroke-width="4" stroke-linecap="round" class="arm-right"/>
+                        <!-- Hands -->
+                        <circle cx="30" cy="70" r="4" fill="#8B4513" class="hand-left"/>
+                        <circle cx="70" cy="70" r="4" fill="#8B4513" class="hand-right"/>
+                        <!-- Legs (stickman style) -->
+                        <line x1="50" y1="88" x2="40" y2="120" stroke="#5D3A1A" stroke-width="5" stroke-linecap="round" class="leg-left"/>
+                        <line x1="50" y1="88" x2="60" y2="120" stroke="#5D3A1A" stroke-width="5" stroke-linecap="round" class="leg-right"/>
+                        <!-- Feet -->
+                        <ellipse cx="38" cy="123" rx="6" ry="4" fill="#5D3A1A" class="foot-left"/>
+                        <ellipse cx="62" cy="123" rx="6" ry="4" fill="#5D3A1A" class="foot-right"/>
+                    </svg>
+                </div>
+                <div id="obstacles-container"></div>
+            </div>
+
+            <!-- Feedback Messages -->
+            <div id="feedback" class="feedback"></div>
+
+            <!-- Pose Status -->
+            <div id="pose-status" class="pose-status">Standing</div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <h2>GAME OVER!</h2>
+            <div class="final-scores">
+                <div class="final-score-item">
+                    <span class="score-icon">💼</span>
+                    <span>Work Dodged: <strong id="final-work">0</strong></span>
+                </div>
+                <div class="final-score-item">
+                    <span class="score-icon">🍌</span>
+                    <span>Bananas Eaten: <strong id="final-bananas">0</strong></span>
+                </div>
+                <div class="final-score-item">
+                    <span>Total Score: <strong id="total-score">0</strong></span>
+                </div>
+            </div>
+            <button id="restart-btn" class="smash-btn">PLAY AGAIN</button>
+        </div>
+
+        <!-- Camera Feed -->
+        <div id="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="pose-canvas"></canvas>
+            <div class="camera-label">CAMERA FEED</div>
         </div>
     </div>
 
-    <!-- MediaPipe Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-    
-    <!-- Game Script -->
     <script src="game.js"></script>
 </body>
 </html>
