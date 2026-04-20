@@ -85,28 +85,42 @@ function switchScreen(screenName) {
 async function initMediaPipe() {
     console.log('Initializing MediaPipe...');
     
+    // Detect mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(navigator.userAgent);
+    
     pose = new Pose({
         locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }
     });
 
+    // Optimize settings based on device
     pose.setOptions({
-        modelComplexity: 1,
+        modelComplexity: isMobile ? 0 : 1, // Use lighter model on mobile
         smoothLandmarks: true,
         enableSegmentation: false,
         smoothSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minDetectionConfidence: isMobile ? 0.6 : 0.5,
+        minTrackingConfidence: isMobile ? 0.6 : 0.5
     });
 
     pose.onResults(onPoseResults);
 
     try {
         console.log('Requesting camera access...');
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480 }
-        });
+        
+        // Request camera with mobile-optimized constraints
+        const constraints = {
+            video: {
+                width: isMobile ? { ideal: 640 } : { ideal: 1280 },
+                height: isMobile ? { ideal: 480 } : { ideal: 720 },
+                facingMode: 'user',
+                frameRate: isMobile ? { ideal: 15, max: 24 } : { ideal: 30 }
+            }
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         
         console.log('Camera access granted!');
         video.srcObject = stream;
@@ -122,8 +136,8 @@ async function initMediaPipe() {
                 onFrame: async () => {
                     await pose.send({ image: video });
                 },
-                width: 640,
-                height: 480
+                width: isMobile ? 640 : 1280,
+                height: isMobile ? 480 : 720
             });
             
             camera.start();
@@ -131,7 +145,7 @@ async function initMediaPipe() {
         };
     } catch (error) {
         console.error('Camera access error:', error);
-        alert('Please allow camera access to play the game!');
+        alert('Please allow camera access to play the game! Make sure you\'re using HTTPS or localhost.');
     }
 }
 
