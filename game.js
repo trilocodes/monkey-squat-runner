@@ -76,9 +76,26 @@ function setupEventListeners() {
 
 // Screen Management
 function switchScreen(screenName) {
-    Object.values(screens).forEach(screen => screen.classList.remove('active'));
-    screens[screenName].classList.add('active');
+    // Hide ALL screens first
+    Object.values(screens).forEach(screen => {
+        if (screen) {
+            screen.classList.remove('active');
+            screen.style.display = 'none';
+            screen.style.visibility = 'hidden';
+            screen.style.opacity = '0';
+        }
+    });
+    
+    // Show only the target screen
+    if (screens[screenName]) {
+        screens[screenName].classList.add('active');
+        screens[screenName].style.display = 'flex';
+        screens[screenName].style.visibility = 'visible';
+        screens[screenName].style.opacity = '1';
+    }
+    
     gameState.screen = screenName;
+    console.log(`Switched to screen: ${screenName}`);
 }
 
 // MediaPipe Initialization
@@ -561,10 +578,27 @@ function resetGame() {
 
 // Initialize game when page loads
 window.addEventListener('load', () => {
-    console.log('🎮 Game loaded - Clearing any zombie intervals');
+    console.log('🎮 Game loaded - Initializing screens');
+    
+    // Ensure only title screen is visible
+    Object.values(screens).forEach(screen => {
+        if (screen) {
+            screen.classList.remove('active');
+            screen.style.display = 'none';
+            screen.style.visibility = 'hidden';
+            screen.style.opacity = '0';
+        }
+    });
+    
+    // Show only title screen
+    if (screens.title) {
+        screens.title.classList.add('active');
+        screens.title.style.display = 'flex';
+        screens.title.style.visibility = 'visible';
+        screens.title.style.opacity = '1';
+    }
     
     // Nuclear option: Clear any potential zombie intervals
-    // Get the highest interval ID and clear everything up to it
     const highestId = setInterval(() => {}, 0);
     for (let i = 0; i < highestId; i++) {
         clearInterval(i);
@@ -573,6 +607,6 @@ window.addEventListener('load', () => {
     
     SPAWN_INTERVAL_ID = null;
     
-    console.log('✓ All intervals cleared, starting fresh');
+    console.log('✓ Screens initialized, intervals cleared');
     init();
 });
