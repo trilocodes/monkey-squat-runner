@@ -401,13 +401,13 @@ function spawnObstacle() {
     obstacle.className = 'obstacle ' + (isWork ? 'work' : 'banana');
     
     if (isWork) {
-        obstacle.textContent = 'WORK';
+        obstacle.textContent = '💻WORK💻';
     } else {
         obstacle.textContent = '🍌';
     }
     
-    // Position on horizontal road - adjusted for bigger monkey
-    obstacle.style.bottom = '40%';
+    // Position higher - above the head
+    obstacle.style.bottom = '59%';
     obstacle.style.right = '-200px';
     
     const obstacleSpeed = gameState.speed === 'fast' ? 3 : 
