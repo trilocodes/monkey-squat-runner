@@ -6,10 +6,21 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Monkey Squat Runner - Fitness Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍌</text></svg>">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="game-container">
+        <!-- Jungle Background Layer -->
+        <div class="jungle-background">
+            <div class="jungle-trees">
+                🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲🌴🌳🌴🌲
+            </div>
+            <div class="jungle-bushes">
+                🌿🍀🌿🌾🌿🍀🌿🌾🌿🍀🌿🌾🌿🍀🌿🌾
+            </div>
+        </div>
+        
         <video id="video" autoplay playsinline></video>
         <canvas id="pose-canvas"></canvas>
         <canvas id="obstacle-canvas"></canvas>
@@ -52,71 +63,73 @@
                 <div class="big-message" id="big-message">Fit your entire body in the frame</div>
                 <div class="sub-message" id="sub-message">Then raise your arm to start</div>
             </div>
-            
-            <div class="game-over-popup" id="game-over-popup">
-                <div class="game-over-container">
-                    <div class="game-over-title">Game Over!</div>
-                    <div class="work-killed-message">You were killed by WORK! 💼💻</div>
-                    <div class="game-over-stats">
-                        <div class="final-score-display" id="final-score">0</div>
-                        <div class="final-breakdown">
-                            <div class="breakdown-item">
-                                <span>⬇️</span>
-                                <span id="final-obstacles">0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span>🍌</span>
-                                <span id="final-bananas">0</span>
-                            </div>
+        </div>
+        
+        <!-- Game Over Popup - OUTSIDE ui-overlay so clicks work -->
+        <div class="game-over-popup" id="game-over-popup">
+            <div class="game-over-container">
+                <div class="game-over-title">Game Over!</div>
+                <div class="work-killed-message">You were killed by WORK! 💼💻</div>
+                <div class="game-over-stats">
+                    <div class="final-score-display" id="final-score">0</div>
+                    <div class="final-breakdown">
+                        <div class="breakdown-item">
+                            <span>⬇️</span>
+                            <span id="final-obstacles">0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>🍌</span>
+                            <span id="final-bananas">0</span>
                         </div>
                     </div>
-                    <button class="restart-button" id="restart-btn">PLAY AGAIN!</button>
                 </div>
+                <button class="restart-button" id="restart-btn">PLAY AGAIN!</button>
             </div>
-            
-            <div class="how-to-play-modal" id="how-to-play">
-                <div class="how-to-play-container">
-                    <div class="how-to-play-title">How to Play</div>
-                    
-                    <div class="instruction-boxes">
-                        <div class="instruction-box">
-                            <div class="instruction-icon">
-                                <div class="demo-monkey squat-demo">
-                                    <div class="demo-head"></div>
-                                    <div class="demo-body"></div>
-                                </div>
-                                <div class="demo-laptop"></div>
+        </div>
+        
+        <!-- How to Play Modal - OUTSIDE ui-overlay so clicks work -->
+        <div class="how-to-play-modal" id="how-to-play">
+            <div class="how-to-play-container">
+                <div class="how-to-play-title">How to Play</div>
+                
+                <div class="instruction-boxes">
+                    <div class="instruction-box">
+                        <div class="instruction-icon">
+                            <div class="demo-monkey squat-demo">
+                                <div class="demo-head"></div>
+                                <div class="demo-body"></div>
                             </div>
-                            <div class="instruction-title">Squat to Dodge!</div>
-                            <div class="instruction-text">Flying laptops = work stress! Squat down to dodge 💼</div>
+                            <div class="demo-laptop"></div>
                         </div>
-                        
-                        <div class="instruction-box">
-                            <div class="instruction-icon">
-                                <div class="demo-monkey stand-demo">
-                                    <div class="demo-head"></div>
-                                    <div class="demo-body"></div>
-                                </div>
-                                <div class="demo-banana">🍌</div>
-                            </div>
-                            <div class="instruction-title">Collect Bananas!</div>
-                            <div class="instruction-text">Stand up to grab bananas for bonus points</div>
-                        </div>
-                        
-                        <div class="instruction-box">
-                            <div class="instruction-icon">
-                                <div class="demo-score">
-                                    <div class="demo-hearts">❤️❤️❤️</div>
-                                    <div class="demo-number">25</div>
-                                </div>
-                            </div>
-                            <div class="instruction-title">Score High!</div>
-                            <div class="instruction-text">Dodge obstacles (+1) and collect bananas (+2)</div>
-                        </div>
+                        <div class="instruction-title">Squat to Dodge!</div>
+                        <div class="instruction-text">Flying laptops = work stress! Squat down to dodge 💼</div>
                     </div>
                     
-                    <button class="start-button" id="start-game-btn">START GAME!</button>
+                    <div class="instruction-box">
+                        <div class="instruction-icon">
+                            <div class="demo-monkey stand-demo">
+                                <div class="demo-head"></div>
+                                <div class="demo-body"></div>
+                            </div>
+                            <div class="demo-banana">🍌</div>
+                        </div>
+                        <div class="instruction-title">Collect Bananas!</div>
+                        <div class="instruction-text">Stand up to grab bananas for bonus points</div>
+                    </div>
+                    
+                    <div class="instruction-box">
+                        <div class="instruction-icon">
+                            <div class="demo-score">
+                                <div class="demo-hearts">❤️❤️❤️</div>
+                                <div class="demo-number">25</div>
+                            </div>
+                        </div>
+                        <div class="instruction-title">Score High!</div>
+                        <div class="instruction-text">Dodge obstacles (+1) and collect bananas (+2)</div>
+                    </div>
                 </div>
+                
+                <button class="start-button" id="start-game-btn">START GAME!</button>
             </div>
         </div>
 

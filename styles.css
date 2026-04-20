@@ -6,7 +6,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-    background: linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    /* Jungle gradient background */
+    background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 30%, #6B8E23 60%, #556B2F 100%);
     color: #ffffff;
     overflow: hidden;
     height: 100vh;
@@ -19,19 +20,107 @@ body {
     width: 100%;
     height: 100vh;
     overflow: hidden;
+    background: linear-gradient(180deg, #87CEEB 0%, #98D8C8 20%, #6B8E23 50%, #556B2F 100%);
 }
 
-/* Video & Canvas - Responsive */
-#video {
+/* Jungle ground layer */
+#game-container::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to bottom, transparent, #2d5016);
+    z-index: 1;
+}
+
+/* Grass texture */
+#game-container::after {
+    content: '🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃🌿🌾🌿🍃';
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 200%;
+    font-size: 48px;
+    line-height: 1;
+    z-index: 2;
+    animation: scroll-grass 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scroll-grass {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+/* Jungle Background Layers */
+.jungle-background {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.jungle-trees {
+    position: absolute;
+    top: 20%;
+    left: 0;
+    width: 200%;
+    font-size: 120px;
+    line-height: 1.2;
+    opacity: 0.4;
+    animation: scroll-trees 40s linear infinite;
+}
+
+@keyframes scroll-trees {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+.jungle-bushes {
+    position: absolute;
+    bottom: 180px;
+    left: 0;
+    width: 200%;
+    font-size: 80px;
+    line-height: 1;
+    opacity: 0.6;
+    animation: scroll-bushes 15s linear infinite;
+    z-index: 3;
+}
+
+@keyframes scroll-bushes {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+/* Video PiP - Bottom Right Corner */
+#video {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
     object-fit: cover;
-    opacity: 0.5;
-    z-index: 1;
-    filter: brightness(0.8) contrast(1.1);
+    border-radius: 16px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+/* Mobile responsive - smaller PiP */
+@media (max-width: 768px) {
+    #video {
+        width: 120px;
+        height: 90px;
+        bottom: 10px;
+        right: 10px;
+    }
 }
 
 #pose-canvas,
@@ -44,11 +133,12 @@ body {
 }
 
 #pose-canvas {
-    z-index: 2;
+    z-index: 101; /* Above video PiP to show skeleton */
+    pointer-events: none;
 }
 
 #obstacle-canvas {
-    z-index: 3;
+    z-index: 5; /* Game layer */
 }
 
 /* UI Overlay - Responsive Container */
@@ -295,7 +385,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 3000; /* Increased from 2000 to be above everything */
+    pointer-events: auto; /* Ensure clicks work */
 }
 
 .how-to-play-modal.hidden {
@@ -310,6 +401,9 @@ body {
     max-width: 1200px;
     text-align: center;
     box-shadow: 0 20px 80px rgba(0, 255, 136, 0.3);
+    position: relative;
+    z-index: 3001;
+    pointer-events: auto;
 }
 
 .how-to-play-title {
@@ -603,11 +697,11 @@ body {
 .player-character {
     position: absolute;
     bottom: 120px;
-    left: 50%;
+    left: 30%; /* Moved to left third instead of center */
     transform: translateX(-50%);
     width: 180px;
     height: 270px;
-    z-index: 5;
+    z-index: 10; /* Above game elements */
     transition: bottom 0.15s ease-out, height 0.15s ease-out;
 }
 
@@ -792,6 +886,22 @@ body {
    =================================== */
 
 @media (max-width: 768px) {
+    /* Smaller jungle elements on mobile */
+    .jungle-trees {
+        font-size: 80px;
+        top: 15%;
+    }
+    
+    .jungle-bushes {
+        font-size: 50px;
+        bottom: 140px;
+    }
+    
+    #game-container::after {
+        font-size: 32px;
+        bottom: 50px;
+    }
+    
     /* Adjust stats container for mobile */
     .stats-container {
         top: 10px;
@@ -829,11 +939,12 @@ body {
         font-size: 16px;
     }
     
-    /* Adjust monkey size for mobile */
+    /* Adjust monkey size for mobile - smaller to save space */
     .player-character {
-        width: 140px;
-        height: 210px;
+        width: 120px;
+        height: 180px;
         bottom: 80px;
+        left: 25%; /* Slightly more to the left on mobile */
     }
     
     .player-head {
