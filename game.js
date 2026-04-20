@@ -6,7 +6,7 @@ const obstacleCanvas = document.getElementById('obstacle-canvas');
 const obstacleCtx = obstacleCanvas.getContext('2d');
 
 // State
-let gameState = 'CALIBRATION'; // CALIBRATION, RUNNING
+let gameState = 'CALIBRATION'; // CALIBRATION, COUNTDOWN, RUNNING
 let pose = null;
 let camera = null;
 let bodyInFrame = false;
@@ -21,6 +21,14 @@ let lives = 3; // Player lives
 let standingHipHeight = null; // Baseline hip height when standing
 let calibrationFrames = []; // Store first 30 frames for calibration
 const CALIBRATION_FRAMES_NEEDED = 30;
+
+// Body detection smoothing
+let bodyInFrameCount = 0;
+const BODY_DETECTION_THRESHOLD = 5; // Need 5 consecutive frames
+
+// Arm raise detection smoothing
+let armRaiseCount = 0;
+const ARM_RAISE_THRESHOLD = 8; // Need 8 consecutive frames to prevent false triggers
 
 // Obstacle state
 let obstacles = [];
@@ -45,48 +53,75 @@ window.addEventListener('resize', resizeCanvas);
 // ==================== POSE DETECTION ====================
 
 /**
- * Check if entire body is visible in frame
+ * Check if entire body is visible in frame - with smoothing
  */
 function checkBodyInFrame(landmarks) {
-    if (!landmarks || landmarks.length < 33) return false;
+    if (!landmarks || landmarks.length < 33) {
+        bodyInFrameCount = 0;
+        return false;
+    }
     
     const leftShoulder = landmarks[11];
     const rightShoulder = landmarks[12];
     const leftHip = landmarks[23];
     const rightHip = landmarks[24];
-    const leftAnkle = landmarks[27];
-    const rightAnkle = landmarks[28];
+    const leftKnee = landmarks[25];
+    const rightKnee = landmarks[26];
     
-    const allVisible = leftShoulder.visibility > 0.5 && 
-                       rightShoulder.visibility > 0.5 &&
-                       leftHip.visibility > 0.5 && 
-                       rightHip.visibility > 0.5 &&
-                       leftAnkle.visibility > 0.5 && 
-                       rightAnkle.visibility > 0.5;
+    // More lenient - only need shoulders, hips, and knees (not ankles)
+    // Reduced visibility threshold to 0.4 (was 0.5)
+    const bodyPartsVisible = leftShoulder.visibility > 0.4 && 
+                              rightShoulder.visibility > 0.4 &&
+                              leftHip.visibility > 0.4 && 
+                              rightHip.visibility > 0.4 &&
+                              leftKnee.visibility > 0.4 && 
+                              rightKnee.visibility > 0.4;
     
-    return allVisible;
+    // Frame smoothing - need consecutive frames
+    if (bodyPartsVisible) {
+        bodyInFrameCount++;
+    } else {
+        bodyInFrameCount = Math.max(0, bodyInFrameCount - 2); // Decay slower
+    }
+    
+    // Return true only after threshold consecutive frames
+    return bodyInFrameCount >= BODY_DETECTION_THRESHOLD;
 }
 
 /**
- * Detect raised arm gesture - wrist above shoulder level
+ * Detect raised arm gesture - wrist above shoulder level - with smoothing
  */
 function detectRaisedArm(landmarks) {
-    if (!landmarks || landmarks.length < 33) return false;
+    if (!landmarks || landmarks.length < 33) {
+        armRaiseCount = 0;
+        return false;
+    }
     
     const leftWrist = landmarks[15];
     const leftShoulder = landmarks[11];
     const rightWrist = landmarks[16];
     const rightShoulder = landmarks[12];
     
-    const leftArmRaised = leftWrist.visibility > 0.6 && 
-                          leftShoulder.visibility > 0.6 && 
-                          leftWrist.y < leftShoulder.y;
+    // More lenient visibility threshold
+    const leftArmRaised = leftWrist.visibility > 0.5 && 
+                          leftShoulder.visibility > 0.5 && 
+                          leftWrist.y < leftShoulder.y - 0.05; // 5% margin
     
-    const rightArmRaised = rightWrist.visibility > 0.6 && 
-                           rightShoulder.visibility > 0.6 && 
-                           rightWrist.y < rightShoulder.y;
+    const rightArmRaised = rightWrist.visibility > 0.5 && 
+                           rightShoulder.visibility > 0.5 && 
+                           rightWrist.y < rightShoulder.y - 0.05; // 5% margin
     
-    return leftArmRaised || rightArmRaised;
+    const armRaised = leftArmRaised || rightArmRaised;
+    
+    // Frame smoothing - need consecutive frames
+    if (armRaised) {
+        armRaiseCount++;
+    } else {
+        armRaiseCount = Math.max(0, armRaiseCount - 1);
+    }
+    
+    // Return true only after threshold consecutive frames
+    return armRaiseCount >= ARM_RAISE_THRESHOLD;
 }
 
 /**
@@ -194,40 +229,50 @@ function updateObstacles() {
     obstacles.forEach(obs => {
         obs.x -= OBSTACLE_SPEED;
         
-        // Check collision with player (monkey is at 30% from left)
-        const playerCenterX = obstacleCanvas.width * 0.3; // 30% from left
-        const objectAtPlayer = obs.x < playerCenterX && obs.x + obs.width > playerCenterX;
-        
-        if (objectAtPlayer && !obs.checked) {
-            obs.checked = true; // Only check once per object
+        // Only check collisions when game is RUNNING (not during COUNTDOWN)
+        if (gameState === 'RUNNING') {
+            // Check collision with player - adjust position based on screen size
+            // Mobile: 18%, Tablet: 25%, Desktop: 30%
+            const isMobile = window.innerWidth <= 768;
+            const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+            let playerPosition = 0.3; // Desktop default
+            if (isMobile) playerPosition = 0.18;
+            else if (isTablet) playerPosition = 0.25;
             
-            if (obs.type === 'obstacle') {
-                // If player is NOT squatting, turn obstacle red (collision)
-                if (!isSquatting) {
-                    obs.hit = true;
-                    loseLife(); // Reduce a heart
-                } else {
-                    // Successfully dodged - turn green and increment obstacle count
-                    obs.dodged = true;
-                    obstaclesDodged++;
-                    squatCount = obstaclesDodged + (bananasCollected * 2); // Total score
-                    document.getElementById('obstacle-count').textContent = obstaclesDodged;
-                    document.getElementById('squat-count').textContent = squatCount;
-                    
-                    // Show instant validation - green flash + motivational text
-                    showValidation();
-                }
-            } else if (obs.type === 'banana') {
-                // Banana - collect if standing (not squatting)
-                if (!isSquatting) {
-                    obs.collected = true;
-                    bananasCollected++;
-                    squatCount = obstaclesDodged + (bananasCollected * 2); // Total score
-                    document.getElementById('banana-count').textContent = bananasCollected;
-                    document.getElementById('squat-count').textContent = squatCount;
-                } else {
-                    // Missed banana (was squatting when it passed)
-                    obs.missed = true;
+            const playerCenterX = obstacleCanvas.width * playerPosition;
+            const objectAtPlayer = obs.x < playerCenterX && obs.x + obs.width > playerCenterX;
+            
+            if (objectAtPlayer && !obs.checked) {
+                obs.checked = true; // Only check once per object
+                
+                if (obs.type === 'obstacle') {
+                    // If player is NOT squatting, turn obstacle red (collision)
+                    if (!isSquatting) {
+                        obs.hit = true;
+                        loseLife(); // Reduce a heart
+                    } else {
+                        // Successfully dodged - turn green and increment obstacle count
+                        obs.dodged = true;
+                        obstaclesDodged++;
+                        squatCount = obstaclesDodged + (bananasCollected * 2); // Total score
+                        document.getElementById('obstacle-count').textContent = obstaclesDodged;
+                        document.getElementById('squat-count').textContent = squatCount;
+                        
+                        // Show comic book effect only
+                        showComicEffect();
+                    }
+                } else if (obs.type === 'banana') {
+                    // Banana - collect if standing (not squatting)
+                    if (!isSquatting) {
+                        obs.collected = true;
+                        bananasCollected++;
+                        squatCount = obstaclesDodged + (bananasCollected * 2); // Total score
+                        document.getElementById('banana-count').textContent = bananasCollected;
+                        document.getElementById('squat-count').textContent = squatCount;
+                    } else {
+                        // Missed banana (was squatting when it passed)
+                        obs.missed = true;
+                    }
                 }
             }
         }
@@ -238,44 +283,57 @@ function updateObstacles() {
 }
 
 /**
- * Show instant validation flash with motivational message
+ * Show comic book style effect on successful squat
  */
-const motivationalMessages = [
-    "Nice dodge! 💪",
-    "Perfect squat! 🔥",
-    "You got this! ⚡",
-    "Crushing it! 🌟",
-    "Keep going! 💯",
-    "Awesome! 🎯",
-    "Beast mode! 🦾",
-    "On fire! 🚀",
-    "Smooth! ✨",
-    "Nailed it! 👏"
-];
-
-function showValidation() {
-    // Create or get validation overlay
-    let validationOverlay = document.getElementById('validation-overlay');
-    if (!validationOverlay) {
-        validationOverlay = document.createElement('div');
-        validationOverlay.id = 'validation-overlay';
-        validationOverlay.className = 'validation-overlay';
-        document.getElementById('game-container').appendChild(validationOverlay);
-    }
+function showComicEffect() {
+    // Use the same motivational messages but with comic book styling
+    const messages = [
+        "Nice dodge! 💪",
+        "Perfect squat! 🔥",
+        "You got this! ⚡",
+        "Crushing it! 🌟",
+        "Keep going! 💯",
+        "Awesome! 🎯",
+        "Beast mode! 🦾",
+        "On fire! 🚀",
+        "Smooth! ✨",
+        "Nailed it! 👏"
+    ];
     
-    // Random motivational message
-    const message = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
-    validationOverlay.textContent = message;
+    const colors = [
+        "#FFD700", // Gold
+        "#FF6B35", // Orange-red
+        "#FF4444", // Red
+        "#00D4FF", // Cyan
+        "#FF69B4", // Pink
+        "#9D4EDD", // Purple
+        "#00FF88", // Green
+        "#FFA500"  // Orange
+    ];
     
-    // Trigger animation
-    validationOverlay.classList.remove('show');
-    void validationOverlay.offsetWidth; // Force reflow
-    validationOverlay.classList.add('show');
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomRotation = -15 + Math.random() * 30; // -15 to +15 degrees
+    
+    // Create comic effect element
+    const comicEl = document.createElement('div');
+    comicEl.className = 'comic-effect';
+    comicEl.textContent = randomMessage;
+    comicEl.style.color = randomColor;
+    comicEl.style.setProperty('--rotation', randomRotation + 'deg');
+    
+    // Random position (middle-right area where obstacles are)
+    const randomTop = 30 + Math.random() * 40; // 30-70% from top
+    const randomLeft = 40 + Math.random() * 30; // 40-70% from left
+    comicEl.style.top = randomTop + '%';
+    comicEl.style.left = randomLeft + '%';
+    
+    document.getElementById('game-container').appendChild(comicEl);
     
     // Remove after animation
     setTimeout(() => {
-        validationOverlay.classList.remove('show');
-    }, 800);
+        comicEl.remove();
+    }, 1000);
 }
 
 /**
@@ -386,37 +444,53 @@ function renderObstacles() {
             const textY = obs.y + obs.height / 2;
             
             // Choose color based on state
-            let textColor, shadowColor;
+            let textColor, shadowColor, gradientStart, gradientEnd;
             if (obs.hit) {
                 // Red - collision
                 textColor = '#ff4444';
                 shadowColor = 'rgba(255, 68, 68, 0.8)';
+                gradientStart = '#ff6666';
+                gradientEnd = '#cc0000';
             } else if (obs.dodged) {
                 // Green - successfully dodged
                 textColor = '#00ff88';
                 shadowColor = 'rgba(0, 255, 136, 0.8)';
+                gradientStart = '#00ff88';
+                gradientEnd = '#00cc66';
             } else {
-                // Active obstacle - dark blue/purple
-                textColor = '#6366f1';
-                shadowColor = 'rgba(99, 102, 241, 0.8)';
+                // Active obstacle - BRIGHT YELLOW/ORANGE comic book style
+                textColor = '#FFD700'; // Bright gold/yellow
+                shadowColor = 'rgba(255, 140, 0, 0.9)'; // Orange shadow
+                gradientStart = '#FFD700';
+                gradientEnd = '#FFA500';
             }
             
             // Draw cartoonish text with shadow
             obstacleCtx.shadowColor = shadowColor;
             obstacleCtx.shadowBlur = 25;
-            obstacleCtx.shadowOffsetX = 3;
-            obstacleCtx.shadowOffsetY = 3;
+            obstacleCtx.shadowOffsetX = 4;
+            obstacleCtx.shadowOffsetY = 4;
             
-            // Main text - bold and huge
+            // Main text - responsive size based on screen width
+            const isMobile = window.innerWidth <= 768;
+            const fontSize = isMobile ? 36 : 52; // Smaller on mobile
+            const strokeWidth = isMobile ? 3 : 5; // Thinner stroke on mobile
+            
             obstacleCtx.fillStyle = textColor;
-            obstacleCtx.font = 'bold 48px "Comic Sans MS", cursive, sans-serif';
+            obstacleCtx.font = `bold ${fontSize}px Impact, "Arial Black", sans-serif`;
             obstacleCtx.textAlign = 'center';
             obstacleCtx.textBaseline = 'middle';
             
-            // Add text stroke for cartoon effect
+            // Add thick black stroke for comic effect
             obstacleCtx.strokeStyle = '#000000';
-            obstacleCtx.lineWidth = 4;
+            obstacleCtx.lineWidth = strokeWidth;
             obstacleCtx.strokeText('💻WORK💻', textX, textY);
+            
+            // Fill with gradient for more pop
+            const gradient = obstacleCtx.createLinearGradient(textX, textY - 30, textX, textY + 30);
+            gradient.addColorStop(0, gradientStart);
+            gradient.addColorStop(1, gradientEnd);
+            obstacleCtx.fillStyle = gradient;
             obstacleCtx.fillText('💻WORK💻', textX, textY);
             
             // Reset shadows
@@ -450,36 +524,25 @@ function drawSkeleton(landmarks) {
     // Only draw skeleton in the PiP area (bottom-right)
     if (landmarks && landmarks.length >= 33) {
         // PiP video position: bottom-right corner
-        const pipWidth = window.innerWidth <= 768 ? 120 : 200;
-        const pipHeight = window.innerWidth <= 768 ? 90 : 150;
-        const pipX = poseCanvas.width - pipWidth - (window.innerWidth <= 768 ? 10 : 20);
-        const pipY = poseCanvas.height - pipHeight - (window.innerWidth <= 768 ? 10 : 20);
+        const isMobile = window.innerWidth <= 768;
+        const pipWidth = isMobile ? 100 : 200;
+        const pipHeight = isMobile ? 75 : 150;
+        const pipX = poseCanvas.width - pipWidth - (isMobile ? 8 : 20);
+        const pipY = poseCanvas.height - pipHeight - (isMobile ? 8 : 20);
         
-        // Body connections
-        const bodyConnections = [
-            // Torso
-            [11, 12], // Shoulders
-            [11, 23], // Left shoulder to hip
-            [12, 24], // Right shoulder to hip
-            [23, 24], // Hips
-            // Left arm
-            [11, 13], // Left shoulder to elbow
-            [13, 15], // Left elbow to wrist
-            // Right arm
-            [12, 14], // Right shoulder to elbow
-            [14, 16], // Right elbow to wrist
-            // Left leg
-            [23, 25], // Left hip to knee
-            [25, 27], // Left knee to ankle
-            // Right leg
-            [24, 26], // Right hip to knee
-            [26, 28], // Right knee to ankle
-        ];
-        
-        // Draw body connections in PiP area
+        // Set line style once
         poseCtx.strokeStyle = '#00d4ff';
-        poseCtx.lineWidth = 2;
+        poseCtx.lineWidth = isMobile ? 1 : 2;
         poseCtx.lineCap = 'round';
+        
+        // Draw all connections in one path for better performance
+        poseCtx.beginPath();
+        
+        const bodyConnections = [
+            [11, 12], [11, 23], [12, 24], [23, 24], // Torso
+            [11, 13], [13, 15], [12, 14], [14, 16], // Arms
+            [23, 25], [25, 27], [24, 26], [26, 28]  // Legs
+        ];
         
         bodyConnections.forEach(([start, end]) => {
             const startPoint = landmarks[start];
@@ -487,35 +550,25 @@ function drawSkeleton(landmarks) {
             
             if (startPoint && endPoint && 
                 startPoint.visibility > 0.5 && endPoint.visibility > 0.5) {
-                const startX = pipX + startPoint.x * pipWidth;
-                const startY = pipY + startPoint.y * pipHeight;
-                const endX = pipX + endPoint.x * pipWidth;
-                const endY = pipY + endPoint.y * pipHeight;
-                
-                poseCtx.beginPath();
-                poseCtx.moveTo(startX, startY);
-                poseCtx.lineTo(endX, endY);
-                poseCtx.stroke();
+                poseCtx.moveTo(pipX + startPoint.x * pipWidth, pipY + startPoint.y * pipHeight);
+                poseCtx.lineTo(pipX + endPoint.x * pipWidth, pipY + endPoint.y * pipHeight);
             }
         });
         
-        // Draw body joints in PiP area
-        [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28].forEach(idx => {
-            const landmark = landmarks[idx];
-            if (landmark && landmark.visibility > 0.5) {
-                const x = pipX + landmark.x * pipWidth;
-                const y = pipY + landmark.y * pipHeight;
-                
-                poseCtx.fillStyle = '#ffffff';
-                poseCtx.beginPath();
-                poseCtx.arc(x, y, 4, 0, 2 * Math.PI);
-                poseCtx.fill();
-                
-                poseCtx.strokeStyle = '#00d4ff';
-                poseCtx.lineWidth = 1;
-                poseCtx.stroke();
-            }
-        });
+        poseCtx.stroke();
+        
+        // Skip drawing joints on mobile for better performance
+        if (!isMobile) {
+            poseCtx.fillStyle = '#ffffff';
+            [11, 12, 23, 24, 25, 26].forEach(idx => { // Only major joints
+                const landmark = landmarks[idx];
+                if (landmark && landmark.visibility > 0.5) {
+                    poseCtx.beginPath();
+                    poseCtx.arc(pipX + landmark.x * pipWidth, pipY + landmark.y * pipHeight, 3, 0, 2 * Math.PI);
+                    poseCtx.fill();
+                }
+            });
+        }
     }
 }
 
@@ -538,6 +591,17 @@ function onPoseResults(results) {
             }
             
             updateCalibrationUI();
+            
+        } else if (gameState === 'COUNTDOWN') {
+            // During countdown: show obstacles but no collision detection
+            // Calibrate standing position
+            if (calibrationFrames.length < CALIBRATION_FRAMES_NEEDED) {
+                calibrateStandingPosition(landmarks);
+            }
+            
+            // Update and render obstacles (no collision yet)
+            updateObstacles();
+            renderObstacles();
             
         } else if (gameState === 'RUNNING') {
             // Calibrate standing position during first 30 frames
@@ -586,37 +650,65 @@ function updateCalibrationUI() {
     const player = document.getElementById('player');
     
     if (bodyInFrame) {
-        // Body detected - show monkey with animation and speech bubble
+        // Body detected - show monkey
         player.classList.remove('hidden');
         player.classList.add('slide-in');
         
-        // Show Coco's introduction
         bigMsg.innerHTML = '💬';
-        bigMsg.style.fontSize = '0px'; // Hide text, show speech bubble instead
+        bigMsg.style.fontSize = '0px';
         subMsg.innerHTML = `
             <div class="speech-bubble">
                 Hi! I'm <strong>Coco</strong>. 🐵<br>
-                Raise your arm to start the game!
+                Raise your arm to start!
             </div>
         `;
     } else {
-        // Body not in frame - hide monkey and show fit instruction
+        // Body not in frame
         player.classList.add('hidden');
         player.classList.remove('slide-in');
         bigMsg.style.fontSize = '32px';
-        bigMsg.textContent = 'Fit your entire body in the frame';
-        subMsg.innerHTML = 'Make sure shoulders, hips, and feet are visible';
+        bigMsg.textContent = 'Fit your body in the frame';
+        subMsg.innerHTML = 'Shoulders, hips, and knees visible';
     }
 }
 
 function startSimulation() {
-    gameState = 'RUNNING';
-    document.getElementById('message-center').style.display = 'none';
-    lastObstacleTime = Date.now(); // Start obstacle timer
+    // Change to COUNTDOWN state first
+    gameState = 'COUNTDOWN';
+    
+    const messageCenter = document.getElementById('message-center');
+    const bigMsg = document.getElementById('big-message');
+    const subMsg = document.getElementById('sub-message');
+    
+    // Start obstacles spawning immediately
+    lastObstacleTime = Date.now() - (OBSTACLE_GAP - 3000); // First obstacle spawns in 3 seconds
     
     // Reset calibration
     calibrationFrames = [];
     standingHipHeight = null;
+    
+    let count = 3;
+    subMsg.innerHTML = '';
+    
+    const countdownInterval = setInterval(() => {
+        if (count > 0) {
+            bigMsg.textContent = count;
+            bigMsg.style.fontSize = '120px';
+            bigMsg.style.color = '#FFD700';
+            bigMsg.style.textShadow = '0 0 40px #FFD700, 0 0 80px #FFA500, 0 4px 8px rgba(0,0,0,0.5)';
+            count--;
+        } else {
+            clearInterval(countdownInterval);
+            bigMsg.textContent = 'GO!';
+            bigMsg.style.color = '#00ff88';
+            bigMsg.style.textShadow = '0 0 40px #00ff88, 0 0 80px #00d4aa, 0 4px 8px rgba(0,0,0,0.5)';
+            
+            setTimeout(() => {
+                gameState = 'RUNNING';
+                messageCenter.style.display = 'none';
+            }, 500);
+        }
+    }, 1000);
 }
 
 function updatePlayerVisual(squatting) {
@@ -625,16 +717,16 @@ function updatePlayerVisual(squatting) {
     const shorts = document.getElementById('shorts');
     
     if (squatting) {
-        // Squat: half height + hide shorts
-        player.style.height = '135px';
+        // Squat: half height + hide shorts (updated for new smaller size)
+        player.style.height = '105px'; // Half of 210px
         player.style.bottom = '60px';
-        body.style.height = '100px';
+        body.style.height = '78px'; // Half of 155px
         shorts.style.opacity = '0';
     } else {
-        // Standing: normal height + show shorts
-        player.style.height = '270px';
+        // Standing: normal height + show shorts (updated for new size)
+        player.style.height = '210px'; // New desktop size
         player.style.bottom = '120px';
-        body.style.height = '200px';
+        body.style.height = '155px'; // New desktop size
         shorts.style.opacity = '1';
     }
 }

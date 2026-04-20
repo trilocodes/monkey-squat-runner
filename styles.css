@@ -116,10 +116,11 @@ body {
 /* Mobile responsive - smaller PiP */
 @media (max-width: 768px) {
     #video {
-        width: 120px;
-        height: 90px;
-        bottom: 10px;
-        right: 10px;
+        width: 100px; /* Even smaller on mobile */
+        height: 75px;
+        bottom: 8px;
+        right: 8px;
+        border-width: 2px;
     }
 }
 
@@ -699,8 +700,8 @@ body {
     bottom: 120px;
     left: 30%; /* Moved to left third instead of center */
     transform: translateX(-50%);
-    width: 180px;
-    height: 270px;
+    width: 140px; /* Reduced from 180px */
+    height: 210px; /* Reduced from 270px */
     z-index: 10; /* Above game elements */
     transition: bottom 0.15s ease-out, height 0.15s ease-out;
 }
@@ -727,11 +728,11 @@ body {
 
 .player-head {
     position: absolute;
-    top: -55px;
+    top: -45px; /* Reduced from -55px */
     left: 50%;
     transform: translateX(-50%);
-    width: 105px;
-    height: 105px;
+    width: 80px; /* Reduced from 105px */
+    height: 80px; /* Reduced from 105px */
     background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
     border-radius: 50%;
     z-index: 3;
@@ -742,9 +743,9 @@ body {
     content: '';
     position: absolute;
     top: 10px;
-    left: -15px;
-    width: 35px;
-    height: 35px;
+    left: -12px; /* Reduced from -15px */
+    width: 28px; /* Reduced from 35px */
+    height: 28px; /* Reduced from 35px */
     background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
     border-radius: 50%;
     z-index: -1;
@@ -755,9 +756,9 @@ body {
     content: '';
     position: absolute;
     top: 10px;
-    right: -15px;
-    width: 35px;
-    height: 35px;
+    right: -12px; /* Reduced from -15px */
+    width: 28px; /* Reduced from 35px */
+    height: 28px; /* Reduced from 35px */
     background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
     border-radius: 50%;
     z-index: -1;
@@ -766,10 +767,10 @@ body {
 /* Monkey eyes */
 .monkey-eyes {
     position: absolute;
-    top: 20px;
+    top: 15px; /* Reduced from 20px */
     left: 50%;
     transform: translateX(-50%);
-    font-size: 32px;
+    font-size: 26px; /* Reduced from 32px */
     z-index: 10;
 }
 
@@ -779,8 +780,8 @@ body {
     bottom: 5px;
     left: 50%;
     transform: translateX(-50%);
-    width: 65px;
-    height: 45px;
+    width: 50px; /* Reduced from 65px */
+    height: 35px; /* Reduced from 45px */
     background: linear-gradient(135deg, #d2a679 0%, #c19a6b 100%);
     border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
     z-index: 5;
@@ -791,8 +792,8 @@ body {
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 180px;
-    height: 200px;
+    width: 140px; /* Reduced from 180px */
+    height: 155px; /* Reduced from 200px */
     background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
     border-radius: 20px;
     transition: height 0.15s ease-out;
@@ -803,11 +804,11 @@ body {
 .player-body::before {
     content: '';
     position: absolute;
-    top: 30px;
+    top: 25px; /* Reduced from 30px */
     left: 50%;
     transform: translateX(-50%);
-    width: 110px;
-    height: 130px;
+    width: 85px; /* Reduced from 110px */
+    height: 100px; /* Reduced from 130px */
     background: linear-gradient(135deg, #d2a679 0%, #c19a6b 100%);
     border-radius: 50%;
     z-index: 1;
@@ -816,9 +817,9 @@ body {
 /* Left hand */
 .monkey-hand-left {
     position: absolute;
-    top: 60px;
-    left: -10px;
-    font-size: 50px;
+    top: 50px; /* Reduced from 60px */
+    left: -8px; /* Reduced from -10px */
+    font-size: 40px; /* Reduced from 50px */
     transform: rotate(-25deg);
     z-index: 10;
 }
@@ -826,9 +827,9 @@ body {
 /* Right hand */
 .monkey-hand-right {
     position: absolute;
-    top: 60px;
-    right: -10px;
-    font-size: 50px;
+    top: 50px; /* Reduced from 60px */
+    right: -8px; /* Reduced from -10px */
+    font-size: 40px; /* Reduced from 50px */
     transform: rotate(25deg) scaleX(-1);
     z-index: 10;
 }
@@ -838,10 +839,10 @@ body {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 180px;
-    height: 70px;
+    width: 140px; /* Reduced from 180px */
+    height: 55px; /* Reduced from 70px */
     display: flex;
-    gap: 10px;
+    gap: 8px; /* Reduced from 10px */
     justify-content: center;
     transition: opacity 0.15s ease-out;
     z-index: 1;
@@ -850,8 +851,8 @@ body {
 /* Monkey legs (brown) */
 .short-left,
 .short-right {
-    width: 75px;
-    height: 70px;
+    width: 58px; /* Reduced from 75px */
+    height: 55px; /* Reduced from 70px */
     background: linear-gradient(135deg, #654321 0%, #4a2f1a 100%);
     border-radius: 10px;
     position: relative;
@@ -939,59 +940,76 @@ body {
         font-size: 16px;
     }
     
-    /* Adjust monkey size for mobile - smaller to save space */
+    /* Adjust monkey size for mobile - MUCH smaller to save space */
     .player-character {
-        width: 120px;
-        height: 180px;
-        bottom: 80px;
-        left: 25%; /* Slightly more to the left on mobile */
+        width: 70px; /* Much smaller - was 90px */
+        height: 105px; /* Much smaller - was 135px */
+        bottom: 50px; /* Lower position */
+        left: 18%; /* Even more to the left */
     }
     
     .player-head {
-        width: 80px;
-        height: 80px;
-        top: -45px;
+        width: 42px; /* Much smaller - was 55px */
+        height: 42px;
+        top: -22px; /* Adjusted */
     }
     
     .player-head::before,
     .player-head::after {
-        width: 28px;
-        height: 28px;
+        width: 16px; /* Smaller ears */
+        height: 16px;
+        left: -6px;
+        top: 8px;
+    }
+    
+    .player-head::after {
+        right: -6px;
+        left: auto;
     }
     
     .monkey-eyes {
-        font-size: 24px;
+        font-size: 14px; /* Smaller */
+        top: 8px;
     }
     
     .monkey-face {
-        width: 50px;
-        height: 35px;
+        width: 28px; /* Smaller */
+        height: 20px;
     }
     
     .player-body {
-        width: 140px;
-        height: 160px;
+        width: 70px; /* Much smaller */
+        height: 78px; /* Much smaller */
     }
     
     .player-body::before {
-        width: 85px;
-        height: 100px;
+        width: 42px; /* Smaller chest */
+        height: 50px;
+        top: 12px;
     }
     
     .monkey-hand-left,
     .monkey-hand-right {
-        font-size: 38px;
+        font-size: 22px; /* Smaller hands */
+        top: 28px;
     }
     
     .player-shorts {
-        width: 140px;
-        height: 55px;
+        width: 70px; /* Match body */
+        height: 32px;
     }
     
     .short-left,
     .short-right {
-        width: 58px;
-        height: 55px;
+        width: 30px; /* Smaller legs */
+        height: 32px;
+    }
+    
+    .short-left::after,
+    .short-right::after {
+        width: 32px; /* Smaller feet */
+        height: 18px;
+        bottom: -8px;
     }
     
     /* Adjust message center */
@@ -1001,12 +1019,56 @@ body {
     }
     
     .big-message {
-        font-size: 24px;
+        font-size: 28px; /* Slightly larger for readability */
     }
     
     .sub-message {
         font-size: 14px;
     }
+    
+    /* Mobile countdown - smaller */
+    .big-message[style*="120px"] {
+        font-size: 80px !important; /* Countdown numbers smaller on mobile */
+    }
+    
+    /* Mobile comic effects - smaller */
+    .comic-effect {
+        font-size: 36px !important;
+    }
+    
+    .comic-effect::after {
+        width: 100px !important;
+        height: 100px !important;
+    }
+    
+    /* Smaller WORK text on mobile */
+    #obstacle-canvas {
+        font-size: 32px; /* Obstacles smaller */
+    }
+
+/* Tablet breakpoint - medium screens */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .player-character {
+        width: 110px;
+        height: 165px;
+        left: 25%;
+    }
+    
+    .player-head {
+        width: 65px;
+        height: 65px;
+        top: -35px;
+    }
+    
+    .monkey-eyes {
+        font-size: 22px;
+    }
+    
+    .player-body {
+        width: 110px;
+        height: 125px;
+    }
+}
 
     /* Game Over - Mobile */
     .game-over-container {
@@ -1257,5 +1319,103 @@ body {
         background: rgba(0, 255, 136, 0);
         opacity: 0;
         transform: scale(1);
+    }
+}
+
+/* Comic Book Effect - Like WHOOSH and OMG images */
+.comic-effect {
+    position: absolute;
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: 64px;
+    font-weight: 900;
+    text-transform: uppercase;
+    z-index: 500;
+    pointer-events: none;
+    letter-spacing: 2px;
+    
+    /* Multi-layer text shadow for depth and comic outline */
+    text-shadow: 
+        -4px -4px 0 #000,
+        4px -4px 0 #000,
+        -4px 4px 0 #000,
+        4px 4px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 30px rgba(255, 255, 255, 0.8),
+        0 0 60px currentColor;
+    
+    /* Pop-in animation with rotation */
+    animation: comicPop 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    transform: rotate(var(--rotation, 0deg));
+    
+    /* Add white explosion burst background */
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+}
+
+/* Add halftone dots overlay effect */
+.comic-effect::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.3) 1px, transparent 1px);
+    background-size: 8px 8px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Add explosion burst behind text */
+.comic-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    background: 
+        linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%),
+        linear-gradient(-45deg, transparent 40%, rgba(255, 255, 255, 0.8) 50%, transparent 60%),
+        linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.6) 50%, transparent 60%),
+        linear-gradient(-135deg, transparent 40%, rgba(255, 255, 255, 0.6) 50%, transparent 60%);
+    transform: translate(-50%, -50%) rotate(var(--rotation, 0deg));
+    z-index: -2;
+    opacity: 0.7;
+    border-radius: 50%;
+}
+
+@keyframes comicPop {
+    0% {
+        transform: scale(0) rotate(var(--rotation, 0deg));
+        opacity: 0;
+    }
+    15% {
+        opacity: 1;
+    }
+    40% {
+        transform: scale(1.4) rotate(var(--rotation, 0deg));
+    }
+    60% {
+        transform: scale(1.1) rotate(var(--rotation, 0deg));
+    }
+    100% {
+        transform: scale(1) rotate(var(--rotation, 0deg));
+        opacity: 0;
+    }
+}
+
+/* Mobile - smaller comic effects */
+@media (max-width: 768px) {
+    .comic-effect {
+        font-size: 42px;
+    }
+    
+    .comic-effect::after {
+        width: 150px;
+        height: 150px;
     }
 }
