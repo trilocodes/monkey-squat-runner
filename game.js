@@ -14,13 +14,13 @@ let armRaisedDetected = false;
 let squatCount = 0; // Total score
 let obstaclesDodged = 0; // Number of obstacles successfully dodged
 let bananasCollected = 0; // Number of bananas collected
-let wasSquatting = false;
 let isSquatting = false; // Current squat state for collision detection
 let lives = 3; // Player lives
-let squatFrameCount = 0; // Counter for consecutive squat frames
-let standFrameCount = 0; // Counter for consecutive standing frames
-const SQUAT_FRAME_THRESHOLD = 1; // Instant squat detection!
-const STAND_FRAME_THRESHOLD = 1; // Instant stand detection!
+
+// Calibration for squat detection
+let standingHipHeight = null; // Baseline hip height when standing
+let calibrationFrames = []; // Store first 30 frames for calibration
+const CALIBRATION_FRAMES_NEEDED = 30;
 
 // Obstacle state
 let obstacles = [];
@@ -90,37 +90,57 @@ function detectRaisedArm(landmarks) {
 }
 
 /**
- * Detect squat position
+ * Detect squat position - uses baseline comparison
  */
 function detectSquat(landmarks) {
     if (!landmarks || landmarks.length < 33) return false;
     
-    const leftShoulder = landmarks[11];
-    const rightShoulder = landmarks[12];
     const leftHip = landmarks[23];
-    const leftKnee = landmarks[25];
     const rightHip = landmarks[24];
+    const leftKnee = landmarks[25];
     const rightKnee = landmarks[26];
-    const leftAnkle = landmarks[27];
-    const rightAnkle = landmarks[28];
     
-    // MUCH MORE LENIENT visibility check
-    if (leftHip.visibility < 0.3 || rightHip.visibility < 0.3 || 
-        leftKnee.visibility < 0.3 || rightKnee.visibility < 0.3) {
+    // Check visibility
+    if (leftHip.visibility < 0.5 || rightHip.visibility < 0.5 || 
+        leftKnee.visibility < 0.5 || rightKnee.visibility < 0.5) {
         return false;
     }
     
-    const hipY = (leftHip.y + rightHip.y) / 2;
-    const kneeY = (leftKnee.y + rightKnee.y) / 2;
-    const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+    const currentHipY = (leftHip.y + rightHip.y) / 2;
     
-    const hipKneeDistance = Math.abs(hipY - kneeY);
-    const shoulderHipDistance = Math.abs(shoulderY - hipY);
+    // If we don't have a baseline yet, we're not squatting
+    if (standingHipHeight === null) {
+        return false;
+    }
     
-    // SIMPLE squat detection: hip close to knee
-    const isSquatting = hipKneeDistance < 0.25; // Very lenient!
+    // Squat detected when hips drop by 15% or more from standing position
+    const hipDrop = currentHipY - standingHipHeight;
+    const isSquatting = hipDrop > 0.15; // Hip moved DOWN (y increases)
     
     return isSquatting;
+}
+
+/**
+ * Calibrate standing position - called during first 30 frames of gameplay
+ */
+function calibrateStandingPosition(landmarks) {
+    if (!landmarks || landmarks.length < 33) return;
+    
+    const leftHip = landmarks[23];
+    const rightHip = landmarks[24];
+    
+    if (leftHip.visibility > 0.5 && rightHip.visibility > 0.5) {
+        const hipY = (leftHip.y + rightHip.y) / 2;
+        calibrationFrames.push(hipY);
+        
+        // After collecting enough frames, calculate baseline
+        if (calibrationFrames.length === CALIBRATION_FRAMES_NEEDED) {
+            // Use median of collected values to avoid outliers
+            calibrationFrames.sort((a, b) => a - b);
+            standingHipHeight = calibrationFrames[Math.floor(CALIBRATION_FRAMES_NEEDED / 2)];
+            console.log('Standing baseline calibrated:', standingHipHeight);
+        }
+    }
 }
 
 // ==================== SKELETON DRAWING ====================
@@ -183,7 +203,7 @@ function updateObstacles() {
             
             if (obs.type === 'obstacle') {
                 // If player is NOT squatting, turn obstacle red (collision)
-                if (!wasSquatting && !isCurrentlySquatting()) {
+                if (!isSquatting) {
                     obs.hit = true;
                     loseLife(); // Reduce a heart
                 } else {
@@ -198,13 +218,16 @@ function updateObstacles() {
                     showValidation();
                 }
             } else if (obs.type === 'banana') {
-                // Banana - collect if standing
-                if (!isSquatting && !wasSquatting) {
+                // Banana - collect if standing (not squatting)
+                if (!isSquatting) {
                     obs.collected = true;
                     bananasCollected++;
                     squatCount = obstaclesDodged + (bananasCollected * 2); // Total score
                     document.getElementById('banana-count').textContent = bananasCollected;
                     document.getElementById('squat-count').textContent = squatCount;
+                } else {
+                    // Missed banana (was squatting when it passed)
+                    obs.missed = true;
                 }
             }
         }
@@ -520,38 +543,36 @@ function onPoseResults(results) {
             updateCalibrationUI();
             
         } else if (gameState === 'RUNNING') {
+            // Calibrate standing position during first 30 frames
+            if (calibrationFrames.length < CALIBRATION_FRAMES_NEEDED) {
+                calibrateStandingPosition(landmarks);
+            }
+            
+            // Detect squat (only after calibration is done)
             const squatDetected = detectSquat(landmarks);
             
-            // DEBUG: Show squat detection status on screen
+            // Update state immediately - no smoothing needed
+            isSquatting = squatDetected;
+            
+            // Update visual
+            updatePlayerVisual(isSquatting);
+            
+            // DEBUG: Show squat detection status
             const bigMsg = document.getElementById('big-message');
-            if (squatDetected) {
-                bigMsg.textContent = '🔵 SQUAT DETECTED';
+            const leftHip = landmarks[23];
+            const rightHip = landmarks[24];
+            const currentHipY = (leftHip.y + rightHip.y) / 2;
+            const drop = standingHipHeight ? ((currentHipY - standingHipHeight) * 100).toFixed(0) : 0;
+            
+            if (isSquatting) {
+                bigMsg.textContent = `🔵 SQUATTING (${drop}%)`;
                 bigMsg.style.color = '#00ff88';
             } else {
-                bigMsg.textContent = '⚪ STANDING';
+                bigMsg.textContent = `⚪ STANDING (${drop}%)`;
                 bigMsg.style.color = '#ffffff';
             }
-            bigMsg.style.fontSize = '24px';
+            bigMsg.style.fontSize = '20px';
             bigMsg.style.display = 'block';
-            
-            // Frame smoothing: require consecutive frames to confirm state change
-            if (squatDetected) {
-                squatFrameCount++;
-                standFrameCount = 0;
-                
-                // Only update to squatting if we have enough consecutive frames
-                if (squatFrameCount >= SQUAT_FRAME_THRESHOLD) {
-                    updatePlayerVisual(true);
-                }
-            } else {
-                standFrameCount++;
-                squatFrameCount = 0;
-                
-                // Only update to standing if we have enough consecutive frames
-                if (standFrameCount >= STAND_FRAME_THRESHOLD) {
-                    updatePlayerVisual(false);
-                }
-            }
             
             // Update and render obstacles
             updateObstacles();
@@ -595,6 +616,10 @@ function startSimulation() {
     gameState = 'RUNNING';
     document.getElementById('message-center').style.display = 'none';
     lastObstacleTime = Date.now(); // Start obstacle timer
+    
+    // Reset calibration
+    calibrationFrames = [];
+    standingHipHeight = null;
 }
 
 function updatePlayerVisual(squatting) {
@@ -608,20 +633,12 @@ function updatePlayerVisual(squatting) {
         player.style.bottom = '60px';
         body.style.height = '100px';
         shorts.style.opacity = '0';
-        isSquatting = true;
-        wasSquatting = true;
     } else {
         // Standing: normal height + show shorts
         player.style.height = '270px';
         player.style.bottom = '120px';
         body.style.height = '200px';
         shorts.style.opacity = '1';
-        isSquatting = false;
-        
-        // Don't count here - only count when obstacle is cleared
-        if (wasSquatting) {
-            wasSquatting = false;
-        }
     }
 }
 

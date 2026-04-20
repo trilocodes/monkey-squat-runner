@@ -191,6 +191,8 @@ body {
     padding: 50px 60px;
     max-width: 600px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     text-align: center;
     box-shadow: 0 20px 80px rgba(255, 68, 68, 0.3);
     animation: gameOverPopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -894,30 +896,141 @@ body {
     .sub-message {
         font-size: 14px;
     }
+
+    /* Game Over - Mobile */
+    .game-over-container {
+        padding: 28px 20px;
+        border-width: 3px;
+        border-radius: 20px;
+    }
+
+    .game-over-title {
+        font-size: 40px;
+    }
+
+    .work-killed-message {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .final-score-display {
+        font-size: 52px;
+    }
+
+    .restart-button {
+        padding: 14px 36px;
+        font-size: 22px;
+    }
     
     /* How to Play - Mobile friendly */
+    .how-to-play-modal {
+        align-items: flex-start;
+        padding: 12px 0;
+        overflow-y: auto;
+    }
+
     .how-to-play-container {
-        padding: 30px 20px;
+        padding: 24px 16px;
         max-width: 95%;
+        width: 95%;
+        border-width: 3px;
+        border-radius: 20px;
+        margin: auto;
     }
     
     .how-to-play-title {
-        font-size: 36px;
-        margin-bottom: 30px;
+        font-size: 28px;
+        margin-bottom: 16px;
     }
     
     .instruction-boxes {
-        flex-direction: column;
-        gap: 20px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
     }
     
     .instruction-box {
+        width: calc(50% - 6px);
+        padding: 16px 12px;
+        border-width: 2px;
+        border-radius: 14px;
+    }
+
+    /* Third box spans full width */
+    .instruction-box:last-child {
         width: 100%;
+    }
+
+    .instruction-icon {
+        height: 90px;
+        margin-bottom: 10px;
+    }
+
+    .demo-monkey {
+        width: 50px;
+        height: 65px;
+    }
+
+    .demo-head {
+        width: 30px;
+        height: 30px;
+    }
+
+    .demo-body {
+        width: 50px;
+        height: 50px;
+    }
+
+    .demo-body::before {
+        width: 32px;
+        height: 38px;
+    }
+
+    .demo-laptop {
+        width: 55px;
+        height: 24px;
+        top: 6px;
+    }
+
+    .demo-laptop::before {
+        width: 48px;
+        height: 30px;
+        top: -28px;
+    }
+
+    .demo-laptop::after {
+        width: 42px;
+        height: 24px;
+        top: -24px;
+    }
+
+    .demo-banana {
+        font-size: 36px;
+        top: -6px;
+    }
+
+    .demo-hearts {
+        font-size: 22px;
+    }
+
+    .demo-number {
+        font-size: 48px;
+    }
+
+    .instruction-title {
+        font-size: 17px;
+        margin-bottom: 6px;
+    }
+
+    .instruction-text {
+        font-size: 13px;
     }
     
     .start-button {
-        padding: 16px 48px;
-        font-size: 24px;
+        padding: 14px 40px;
+        font-size: 22px;
+        letter-spacing: 1px;
     }
 }
 
@@ -935,15 +1048,33 @@ body {
     }
     
     .how-to-play-title {
-        font-size: 28px;
+        font-size: 24px;
+        margin-bottom: 12px;
     }
     
     .instruction-title {
-        font-size: 20px;
+        font-size: 15px;
     }
     
     .instruction-text {
-        font-size: 14px;
+        font-size: 12px;
+    }
+
+    .instruction-icon {
+        height: 75px;
+    }
+
+    .demo-number {
+        font-size: 38px;
+    }
+
+    .demo-hearts {
+        font-size: 18px;
+    }
+
+    .start-button {
+        padding: 12px 32px;
+        font-size: 20px;
     }
 }
 
